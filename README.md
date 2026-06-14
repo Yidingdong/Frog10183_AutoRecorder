@@ -89,9 +89,9 @@ recorder.showTelemetry();
 recorder.close();
 ```
 
-> **Note** — Construct the recorder **after** your subsystems initialize their motors.
-> It reads each motor's control mode once at construction to decide power-vs-velocity, so
-> the mode must already be set (e.g. a flywheel already in `RUN_USING_ENCODER`).
+> **Note** — You can construct the recorder **anywhere in init**. It re-samples each motor's
+> control mode the moment recording starts (your first `capture()`), so a flywheel only needs
+> to be in `RUN_USING_ENCODER` by the time you press play and start driving — not earlier.
 
 > **Warning** — Call `capture()` every loop. Don't gate it behind a button; it rate-limits
 > itself to 50 Hz internally.
@@ -184,7 +184,7 @@ voltage comp).
 
 | Feature | Default | When to change it |
 |---|---|---|
-| **Velocity channels** | Auto | Automatic: any motor in `RUN_USING_ENCODER` at record time becomes a velocity channel. Make sure such motors are already in that mode when the recorder is constructed. |
+| **Velocity channels** | Auto | Automatic: any motor in `RUN_USING_ENCODER` when recording starts becomes a velocity channel. Make sure such motors are in that mode by the time you press play and drive (construction order doesn't matter). |
 | **Voltage compensation** | ON (if a sensor exists) | Recorder: `recorder.setVoltageCompensation(false)` before the first `capture()`. Playback: press **X** to toggle (useful for A/B comparison). |
 
 ---
@@ -195,10 +195,34 @@ voltage comp).
 |---|---|---|
 | "No devices discovered" | Hardware config not loaded / wrong names | Activate the correct robot configuration on the Driver Station. |
 | Robot drifts / ends in the wrong spot | Battery, start pose, or wheel slip | Align the robot the same way every time; keep voltage comp ON; re-record on a fresh pack. |
-| Flywheel/shooter wrong speed on playback | Motor wasn't in `RUN_USING_ENCODER` when the recorder was constructed | Construct the recorder after the subsystem sets velocity mode. |
+| Flywheel/shooter wrong speed on playback | Motor wasn't in `RUN_USING_ENCODER` when recording started | Make sure the flywheel is in velocity mode before you press play and drive the recording. |
 | Playback does nothing | Empty slot, or rows didn't match the device count | Re-record; confirm the slot shows a size in KB. |
 | "Device not found" warning | Playback robot's config differs from the recording robot | Match device names between the two configs. |
 | Playback stops early | Hit the safety timeout | Timeout is `recording length + 5 s` (min 30 s); long autos are fine. |
+| Arm/lift doesn't reach its positions | It's on `RUN_TO_POSITION` | Not reproduced — see Compatibility. Drive it as velocity or power, or use a hard stop. |
+| A device does nothing on playback | Shown as `SKIPPED (not DcMotorEx)` on the slot screen | That motor object isn't a `DcMotorEx` and can't be recorded (very rare on modern hubs). |
+
+## Compatibility — what works on which robot
+
+It auto-discovers any hardware config, so it **runs** on every robot. Replay *fidelity*
+depends on how each device is controlled:
+
+**✅ Reproduced faithfully**
+- Any **motor-power drivetrain** — mecanum, tank, 6-wheel, X-drive, H-drive (robot-centric).
+- **Closed-loop velocity** mechanisms — a flywheel/shooter on `RUN_USING_ENCODER` + `setVelocity` (holds RPM, voltage-independent).
+- **Servos** (claw, wrist, hood) and **CR-servos** (intake).
+- Robots with **no voltage sensor**, **two hubs**, 20+ devices, config names with spaces, any number of I2C sensors.
+
+**⚠️ Works, with a caveat**
+- **Field-centric drive:** the record-time heading is baked into the motor outputs, so you must **start at the exact same heading** (not just position) or the whole path rotates.
+- **Open-loop power arms/lifts** (`RUN_WITHOUT_ENCODER`): the *command* replays faithfully, but the resulting **position drifts** (gravity, friction, battery). Use a hard stop or a held setpoint for repeatable heights.
+- **Sharing to a *different* robot:** power/servo/CR-servo channels port by name; **velocity channels also need the same motor, encoder CPR and gearing** (ticks/sec is hardware-specific).
+- **Swerve:** servo-steered modules replay their commanded angles but slew uncontrolled at `t=0`; closed-loop (encoder) steering isn't reproduced.
+
+**❌ Not reproduced**
+- **`RUN_TO_POSITION` arms/lifts** — only the open-loop speed cap is captured, so the arm **won't hit its presets**. Drive such mechanisms as velocity or plain power instead (playback also warns on `RUN_TO_POSITION`).
+- **A motor that changes `RunMode` mid-recording** — the channel kind is locked when recording starts.
+- **Iterative `OpMode`s** — the slot picker blocks, so recording is **LinearOpMode-only** (playback is its own OpMode and is fine).
 
 ## Limitations — when to use something else
 
@@ -229,7 +253,8 @@ path-following later — or keep one as a backup when odometry breaks at an even
 ## FAQ
 
 - **Does it need odometry?** No. It works on any drivetrain with no localization hardware.
-- **Mecanum / tank / arm-bot?** Any output-controlled motors and servos work.
+- **Mecanum / tank / arm-bot?** Any drivetrain works. Servos and power/velocity motors
+  replay faithfully; a `RUN_TO_POSITION` arm does **not** (see Compatibility).
 - **Will my flywheel replay correctly?** Yes if it's a velocity channel (closed-loop in
   `RUN_USING_ENCODER`). It's reproduced via the same closed loop, so it holds RPM. It's
   still best-effort, not frame-perfect.

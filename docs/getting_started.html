@@ -114,10 +114,10 @@ public class MyTeleOp extends LinearOpMode {
     <p><span class="out">On the Driver Station:</span> <span class="kbd">D-Pad ▲▼</span> select slot ·
       <span class="kbd">B</span> delete · <span class="kbd">A</span> or <span class="kbd">▶ PLAY</span> begin.</p>
   </div>
-  <div class="note"><b>Construct after subsystems init.</b> The recorder reads each motor's control mode once at
-  construction to decide power-vs-velocity. A flywheel must already be in <code>RUN_USING_ENCODER</code> by then —
-  if it shows as <code>M:</code> (power) instead of <code>V:</code> (velocity) on the slot screen, you built the
-  recorder too early.</div>
+  <div class="note"><b>Construct it anywhere in init.</b> The recorder re-samples each motor's control mode
+  <i>when recording starts</i> (your first <code>capture()</code>), so a flywheel only needs to be in
+  <code>RUN_USING_ENCODER</code> by the time you press play and drive — not when you build the recorder. The
+  <code>V:</code>/<code>M:</code> shown on the slot screen is just a best-effort hint.</div>
   <div class="note"><b>Pass <code>this</code> (the 4-arg constructor).</b> It lets STOP exit the slot picker cleanly
   and lets the Driver Station PLAY button confirm. The 3-arg constructor lacks this — prefer the 4-arg form shown above.</div>
   <div class="warn"><b>Call <code>capture()</code> every loop.</b> Don't gate it behind a button — it rate-limits
@@ -150,7 +150,7 @@ public class MyTeleOp extends LinearOpMode {
     <tr><th>Symptom</th><th>Likely cause</th><th>Fix</th></tr>
     <tr><td>"No devices discovered"</td><td>Config not active / wrong names</td><td>Activate the correct robot configuration.</td></tr>
     <tr><td>Ends in the wrong spot</td><td>Battery, start pose, wheel slip</td><td>Align the same way; keep voltage comp ON; re-record on a fresh pack.</td></tr>
-    <tr><td>Flywheel speed wrong</td><td>Not in <code>RUN_USING_ENCODER</code> at construction</td><td>Construct the recorder after the subsystem sets velocity mode.</td></tr>
+    <tr><td>Flywheel speed wrong</td><td>Not in <code>RUN_USING_ENCODER</code> when recording started</td><td>Put the flywheel in velocity mode before you press play and drive.</td></tr>
     <tr><td>Playback does nothing</td><td>Empty slot / column mismatch</td><td>Re-record; confirm the slot shows a KB size.</td></tr>
     <tr><td>"Device not found"</td><td>Playback config differs from recording config</td><td>Match device names between robots.</td></tr>
     <tr><td>Stops early</td><td>Safety timeout</td><td>Timeout is recording length + 5&nbsp;s (min 30&nbsp;s) — long autos are fine.</td></tr>
@@ -163,6 +163,11 @@ public class MyTeleOp extends LinearOpMode {
     multi-segment routines. Universal Record &amp; Playback shines when you want a working auto <b>fast</b>, have
     <b>no odometry</b>, or are <b>sharing</b> an auto with an alliance partner — and as a reliable fallback.</p>
   </div>
+  <div class="warn"><b>Fidelity by device.</b> Faithful: motor-power drivetrains, closed-loop velocity flywheels,
+  servos, CR-servos. Caveats: field-centric drive needs the same <i>start heading</i>; open-loop lifts drift.
+  <b>Not reproduced:</b> <code>RUN_TO_POSITION</code> arms (won't hit presets — drive them as velocity/power), a motor
+  that changes mode mid-run, and iterative <code>OpMode</code>s (recording is LinearOpMode-only). Full matrix in
+  <code>universal/readme.md</code>.</div>
 
   <footer>
     Universal Auto Recorder &amp; Playback · MIT licensed · FTC 10183 F.R.O.G. ·

@@ -56,13 +56,14 @@ import java.util.Map;
  * so it reproduces accurately regardless of battery voltage. Open-loop power channels are
  * additionally battery-voltage compensated on playback.</p>
  *
- * <h3>Integration (3 lines in your TeleOp):</h3>
+ * <h3>Integration (import + field + 4 calls in your LinearOpMode):</h3>
  * <pre>{@code
  * import org.firstinspires.ftc.teamcode.universal.UniversalAutoRecorder;
  *
  * private UniversalAutoRecorder recorder;
  *
- * // In runOpMode(), AFTER your subsystems set their motor modes, before waitForStart():
+ * // In runOpMode(), after hardware init, before waitForStart() (order-independent —
+ * // motor modes are re-sampled when recording starts):
  * recorder = new UniversalAutoRecorder(hardwareMap, gamepad1, telemetry, this);
  * recorder.waitForSlotSelection();
  *
@@ -106,6 +107,7 @@ public class UniversalAutoRecorder {
     private final List<ChannelKind> motorKinds = new ArrayList<>();
     private final List<PIDFCoefficients> motorPidfs = new ArrayList<>(); // null unless velocity
     private final List<Boolean> motorWasRunToPosition = new ArrayList<>();
+    private final List<String> skippedMotorNames = new ArrayList<>(); // dcMotors that aren't DcMotorEx
 
     private final List<String> servoNames = new ArrayList<>();
     private final List<Servo> servos = new ArrayList<>();
@@ -174,47 +176,61 @@ public class UniversalAutoRecorder {
 
     private void discoverDevices() {
         for (Map.Entry<String, DcMotor> entry : hardwareMap.dcMotor.entrySet()) {
-            String name = entry.getKey();
             DcMotor motor = entry.getValue();
-            if (!(motor instanceof DcMotorEx)) continue;
-
-            DcMotorEx motorEx = (DcMotorEx) motor;
-            motorNames.add(name);
-            motors.add(motorEx);
-            motorDirections.add(motorEx.getDirection());
-            motorBehaviors.add(motorEx.getZeroPowerBehavior());
-
-            // Classify the channel by the motor's CURRENT control mode (sampled once, here).
-            // RUN_USING_ENCODER => closed-loop velocity: record ticks/sec + the velocity PIDF.
-            // Anything else => open-loop power.
-            DcMotor.RunMode mode = motorEx.getMode();
-            boolean wasRunToPosition = false;
-            ChannelKind kind;
-            PIDFCoefficients pidf = null;
-            if (mode == DcMotor.RunMode.RUN_USING_ENCODER) {
-                kind = ChannelKind.VELOCITY;
-                try {
-                    pidf = motorEx.getPIDFCoefficients(DcMotor.RunMode.RUN_USING_ENCODER);
-                } catch (Exception ignored) {
-                    pidf = null; // playback falls back to the hub's default PIDF
-                }
-            } else {
-                kind = ChannelKind.POWER;
-                wasRunToPosition = (mode == DcMotor.RunMode.RUN_TO_POSITION);
+            if (!(motor instanceof DcMotorEx)) {
+                skippedMotorNames.add(entry.getKey()); // not DcMotorEx — cannot record (very rare)
+                continue;
             }
-            motorKinds.add(kind);
-            motorPidfs.add(pidf);
-            motorWasRunToPosition.add(wasRunToPosition);
+            motorNames.add(entry.getKey());
+            motors.add((DcMotorEx) motor);
         }
-
         for (Map.Entry<String, Servo> entry : hardwareMap.servo.entrySet()) {
             servoNames.add(entry.getKey());
             servos.add(entry.getValue());
         }
-
         for (Map.Entry<String, CRServo> entry : hardwareMap.crservo.entrySet()) {
             crServoNames.add(entry.getKey());
             crServos.add(entry.getValue());
+        }
+        snapshotMotorChannels(); // initial classification for the slot-screen hint
+    }
+
+    /**
+     * Sample each motor's control mode, PIDF, direction and zero-power behavior.
+     * Called at construction (for the slot-screen hint) and again the moment recording
+     * starts — so the recording reflects the modes in effect at that point, and you can
+     * construct the recorder anywhere in init regardless of when subsystems set their modes.
+     */
+    private void snapshotMotorChannels() {
+        motorDirections.clear();
+        motorBehaviors.clear();
+        motorKinds.clear();
+        motorPidfs.clear();
+        motorWasRunToPosition.clear();
+        for (DcMotorEx motorEx : motors) {
+            // Sample defensively into locals first, then add all 5 lists together, so a
+            // (very unlikely) SDK getter exception can never desync the parallel lists or
+            // propagate out of capture(). These getters are cache reads and rarely throw.
+            DcMotorSimple.Direction dir = DcMotorSimple.Direction.FORWARD;
+            DcMotor.ZeroPowerBehavior zpb = DcMotor.ZeroPowerBehavior.BRAKE;
+            DcMotor.RunMode mode = DcMotor.RunMode.RUN_WITHOUT_ENCODER;
+            PIDFCoefficients pidf = null;
+            try {
+                dir = motorEx.getDirection();
+                zpb = motorEx.getZeroPowerBehavior();
+                mode = motorEx.getMode();
+                if (mode == DcMotor.RunMode.RUN_USING_ENCODER) {
+                    pidf = motorEx.getPIDFCoefficients(DcMotor.RunMode.RUN_USING_ENCODER);
+                }
+            } catch (Exception ignored) {
+                // keep defaults / partial reads; playback falls back to hub-default PIDF
+            }
+            boolean velocity = (mode == DcMotor.RunMode.RUN_USING_ENCODER);
+            motorDirections.add(dir);
+            motorBehaviors.add(zpb);
+            motorKinds.add(velocity ? ChannelKind.VELOCITY : ChannelKind.POWER);
+            motorPidfs.add(velocity ? pidf : null);
+            motorWasRunToPosition.add(mode == DcMotor.RunMode.RUN_TO_POSITION);
         }
     }
 
@@ -477,9 +493,11 @@ public class UniversalAutoRecorder {
             for (String n : crServoNames) deviceList.append(" C:").append(n);
             telemetry.addData("Devices", deviceList.toString().trim());
             if (!motorNames.isEmpty()) {
-                telemetry.addLine("  V=velocity M=power -- a flywheel must show V:");
-                telemetry.addLine("  (build recorder AFTER setting RUN_USING_ENCODER)");
+                telemetry.addLine("  V=velocity M=power (re-checked when recording starts)");
             }
+        }
+        if (!skippedMotorNames.isEmpty()) {
+            telemetry.addLine("  SKIPPED (not DcMotorEx): " + String.join(", ", skippedMotorNames));
         }
 
         telemetry.addLine("╠══════════════════════════════════════╣");
@@ -520,7 +538,7 @@ public class UniversalAutoRecorder {
         telemetry.addData("Servos", servoNames.size());
         telemetry.addData("CR Servos", crServoNames.size());
         telemetry.addData("Voltage comp", voltageCompEnabled ? "ON" : "OFF");
-        telemetry.addLine("(Velocity motors must have been in RUN_USING_ENCODER at init)");
+        telemetry.addLine("(Motor modes are sampled when recording starts)");
 
         if (slots[selectedSlot].occupied) {
             telemetry.addLine();
@@ -541,6 +559,9 @@ public class UniversalAutoRecorder {
      */
     private void startRecording() {
         recording = true;
+        // Re-sample modes/PIDF/direction NOW, so the recording is correct even if the
+        // recorder was constructed before subsystems set their motor modes.
+        snapshotMotorChannels();
         recordingStartTime = System.currentTimeMillis();
         // Make the very first capture() record a frame at t≈0.
         lastCaptureTime = recordingStartTime - CAPTURE_INTERVAL_MS;
