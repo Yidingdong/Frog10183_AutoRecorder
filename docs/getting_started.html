@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Universal Auto Recorder &amp; Playback — Getting Started</title>
+<style>
+  :root{
+    --bg:#0f1419; --card:#1a212b; --card2:#212a36; --ink:#e6edf3; --muted:#9aa7b4;
+    --accent:#4cc2ff; --accent2:#7ee787; --warn:#ffb454; --danger:#ff7b72;
+    --line:#2d3744; --code:#0c1117;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.6 -apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;}
+  .wrap{max-width:980px;margin:0 auto;padding:32px 20px 80px;}
+  h1{font-size:30px;margin:0 0 4px;letter-spacing:-.5px}
+  h2{font-size:22px;margin:38px 0 12px;padding-bottom:8px;border-bottom:1px solid var(--line)}
+  h3{font-size:17px;margin:0 0 6px}
+  .sub{color:var(--muted);margin:0 0 24px}
+  a{color:var(--accent)}
+  code{font-family:"SF Mono",Consolas,Menlo,monospace;background:var(--code);padding:2px 6px;border-radius:5px;font-size:13.5px;color:#cdd9e5}
+  pre{background:var(--code);border:1px solid var(--line);border-radius:10px;padding:14px 16px;overflow:auto;font-size:13px;line-height:1.5}
+  pre code{background:none;padding:0}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:18px 20px;margin:14px 0}
+  .step{background:var(--card);border:1px solid var(--line);border-left:4px solid var(--accent);border-radius:10px;padding:16px 20px;margin:14px 0}
+  .step h3 .num{display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;border-radius:50%;background:var(--accent);color:#06121c;font-weight:700;font-size:14px;margin-right:10px}
+  .pill{display:inline-block;font-size:12px;padding:2px 9px;border-radius:20px;border:1px solid var(--line);color:var(--muted);margin-left:6px;vertical-align:middle}
+  .do{color:var(--accent2);font-weight:600}
+  .out{color:var(--warn)}
+  table{width:100%;border-collapse:collapse;margin:12px 0;font-size:14px}
+  th,td{text-align:left;padding:9px 10px;border-bottom:1px solid var(--line);vertical-align:top}
+  th{color:var(--muted);font-weight:600;font-size:12.5px;text-transform:uppercase;letter-spacing:.4px}
+  td code{font-size:12.5px}
+  .note{border-left:4px solid var(--accent2);background:var(--card2);padding:12px 16px;border-radius:8px;margin:12px 0}
+  .warn{border-left:4px solid var(--warn);background:var(--card2);padding:12px 16px;border-radius:8px;margin:12px 0}
+  .danger{border-left:4px solid var(--danger);background:var(--card2);padding:12px 16px;border-radius:8px;margin:12px 0}
+  .muted{color:var(--muted)}
+  ul{margin:8px 0;padding-left:22px}
+  li{margin:4px 0}
+  .kbd{font-family:monospace;background:#2b3440;border:1px solid var(--line);border-bottom-width:2px;border-radius:5px;padding:1px 7px;font-size:13px}
+  .tag{font-size:11px;letter-spacing:.5px;text-transform:uppercase;color:var(--accent);font-weight:700}
+  footer{margin-top:50px;color:var(--muted);font-size:13px;border-top:1px solid var(--line);padding-top:16px}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <h1>Universal Auto Recorder &amp; Playback</h1>
+  <p class="sub">Getting-started guide · FTC SDK 11.0.0 · drive your autonomous once, replay it in Auto</p>
+
+  <div class="card">
+    <p style="margin:0 0 8px"><span class="tag">What this is</span></p>
+    <p style="margin:0">A <b>record-and-replay</b> autonomous tool. While you drive in TeleOp it records every
+    motor and servo at 50&nbsp;Hz; an Autonomous OpMode replays them with smooth interpolation. <b>Zero config</b> —
+    it auto-discovers your hardware, so there are no motor names to edit. This guide walks the integration in a few
+    numbered steps and is honest about where the approach works well and where it doesn't. Full reference lives in the
+    <code>universal/readme.md</code>.</p>
+  </div>
+
+  <div class="note"><b>Faithful by control mode:</b> a closed-loop velocity motor (a flywheel on
+  <code>RUN_USING_ENCODER</code> + <code>setVelocity</code>) is recorded and replayed as an <b>RPM target</b>, not raw
+  power — so it holds speed regardless of battery voltage. Open-loop power channels are additionally <b>voltage
+  compensated</b> on playback.</div>
+
+  <h2>0 · Prerequisites</h2>
+  <ul>
+    <li><b>FTC SDK 11.0.0</b> project (Android Studio or OnBotJava). No Pedro / Road Runner / dashboard needed.</li>
+    <li>Your recording OpMode is a <b>LinearOpMode</b> — <code>waitForSlotSelection()</code> blocks, so an
+      iterative <code>OpMode</code> (<code>init()</code>/<code>loop()</code>) isn't supported as-is. Playback is
+      already a LinearOpMode.</li>
+    <li>A working robot configuration on the Driver Station and a gamepad.</li>
+    <li><b>A consistent start position.</b> Replay has no localization — decide now how you'll place the robot the same
+      way every match (field wall, a start jig, tape marks).</li>
+    <li><b>A charged, consistent battery.</b> Speeds depend on voltage; record on a fresh pack.</li>
+  </ul>
+
+  <h2>1 · Add the two files</h2>
+  <div class="step">
+    <h3><span class="num">1</span>Copy into your project <span class="pill">one time</span></h3>
+    <p><span class="do">What you do:</span> drop <code>UniversalAutoRecorder.java</code> and
+      <code>UniversalAutoPlayback.java</code> into <code>TeamCode/&hellip;/universal/</code>. Optionally add
+      <code>SampleRecorderTeleOp.java</code> to try it without touching your own TeleOp.</p>
+    <p class="muted">That's the whole install. Nothing to configure.</p>
+  </div>
+  <div class="note"><b>The OpModes ship disabled.</b> <code>UniversalAutoPlayback</code> and
+  <code>SampleRecorderTeleOp</code> carry an <code>@Disabled</code> annotation so they stay off your OpMode
+  list. Delete that one line in a file to make it appear on the Driver Station. (<code>UniversalAutoRecorder</code>
+  is a plain utility class — no annotation, always available.)</div>
+
+  <h2>2 · Wire the recorder into a TeleOp</h2>
+  <div class="step">
+    <h3><span class="num">2</span>Add the recorder <span class="pill">recorder</span></h3>
+    <p><span class="do">What you do:</span> construct the recorder after your hardware/subsystems are set up, call
+      <code>capture()</code> every loop, and <code>close()</code> on stop.</p>
+<pre><code>import org.firstinspires.ftc.teamcode.universal.UniversalAutoRecorder;
+
+public class MyTeleOp extends LinearOpMode {
+    private UniversalAutoRecorder recorder;
+
+    @Override public void runOpMode() {
+        // ... hardwareMap.get(...) every motor/servo AND set their run modes ...
+
+        recorder = new UniversalAutoRecorder(hardwareMap, gamepad1, telemetry, this);
+        recorder.waitForSlotSelection();   // slot-picker UI; before waitForStart()
+        waitForStart();
+
+        while (opModeIsActive()) {
+            // ... your normal drive / mechanism code ...
+            recorder.capture();            // every loop (self-limits to 50 Hz)
+        }
+        recorder.close();                  // saves the recording
+    }
+}</code></pre>
+    <p><span class="out">On the Driver Station:</span> <span class="kbd">D-Pad ▲▼</span> select slot ·
+      <span class="kbd">B</span> delete · <span class="kbd">A</span> or <span class="kbd">▶ PLAY</span> begin.</p>
+  </div>
+  <div class="note"><b>Construct after subsystems init.</b> The recorder reads each motor's control mode once at
+  construction to decide power-vs-velocity. A flywheel must already be in <code>RUN_USING_ENCODER</code> by then —
+  if it shows as <code>M:</code> (power) instead of <code>V:</code> (velocity) on the slot screen, you built the
+  recorder too early.</div>
+  <div class="note"><b>Pass <code>this</code> (the 4-arg constructor).</b> It lets STOP exit the slot picker cleanly
+  and lets the Driver Station PLAY button confirm. The 3-arg constructor lacks this — prefer the 4-arg form shown above.</div>
+  <div class="warn"><b>Call <code>capture()</code> every loop.</b> Don't gate it behind a button — it rate-limits
+  itself internally.</div>
+
+  <h2>3 · Record your autonomous</h2>
+  <div class="step">
+    <h3><span class="num">3</span>Drive it by hand <span class="pill">TeleOp</span></h3>
+    <p><span class="do">What you do:</span> place the robot at your start pose, run the TeleOp, pick an empty slot, press
+      <span class="kbd">A</span>, then <b>drive the autonomous routine</b> exactly as you want it replayed. Press
+      <span class="kbd">■ STOP</span> when done — it saves automatically.</p>
+    <p class="muted">Tip: keep early routines short. A clean 8-second auto replays far more reliably than a sprawling one.</p>
+  </div>
+
+  <h2>4 · Replay in Autonomous</h2>
+  <div class="step">
+    <h3><span class="num">4</span>Run "Universal Auto Playback" <span class="pill">Autonomous</span></h3>
+    <p><span class="do">What you do:</span> select the <code>Universal Auto Playback</code> OpMode, pick the same slot
+      with <span class="kbd">D-Pad ▲▼</span>, optionally toggle voltage comp with <span class="kbd">X</span>, then press
+      <span class="kbd">▶ PLAY</span>.</p>
+    <p><span class="out">It rebuilds</span> every recorded device by name, restores directions / zero-power behavior /
+      velocity PIDF, and replays with up to ~200&nbsp;Hz interpolation. It stops at the end of the recording (or a
+      safety timeout of the recording's length + 5&nbsp;s, minimum 30&nbsp;s).</p>
+  </div>
+  <div class="danger"><b>Same start pose, every time.</b> There is no localization. A few centimeters or degrees of
+  offset at the start carries through the entire run. Align against the field wall or a jig before every replay.</div>
+
+  <h2>5 · Troubleshooting</h2>
+  <table>
+    <tr><th>Symptom</th><th>Likely cause</th><th>Fix</th></tr>
+    <tr><td>"No devices discovered"</td><td>Config not active / wrong names</td><td>Activate the correct robot configuration.</td></tr>
+    <tr><td>Ends in the wrong spot</td><td>Battery, start pose, wheel slip</td><td>Align the same way; keep voltage comp ON; re-record on a fresh pack.</td></tr>
+    <tr><td>Flywheel speed wrong</td><td>Not in <code>RUN_USING_ENCODER</code> at construction</td><td>Construct the recorder after the subsystem sets velocity mode.</td></tr>
+    <tr><td>Playback does nothing</td><td>Empty slot / column mismatch</td><td>Re-record; confirm the slot shows a KB size.</td></tr>
+    <tr><td>"Device not found"</td><td>Playback config differs from recording config</td><td>Match device names between robots.</td></tr>
+    <tr><td>Stops early</td><td>Safety timeout</td><td>Timeout is recording length + 5&nbsp;s (min 30&nbsp;s) — long autos are fine.</td></tr>
+  </table>
+
+  <h2>6 · When to use something else</h2>
+  <div class="card">
+    <p style="margin:0 0 8px">This is <b>output replay</b>, not navigation. Reach for an odometry path-follower
+    (Pedro, Road Runner) instead when you need centimeter-level accuracy, sensor/AprilTag reactions, or long precise
+    multi-segment routines. Universal Record &amp; Playback shines when you want a working auto <b>fast</b>, have
+    <b>no odometry</b>, or are <b>sharing</b> an auto with an alliance partner — and as a reliable fallback.</p>
+  </div>
+
+  <footer>
+    Universal Auto Recorder &amp; Playback · MIT licensed · FTC 10183 F.R.O.G. ·
+    full reference in <code>universal/readme.md</code>
+  </footer>
+
+</div>
+</body>
+</html>

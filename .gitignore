@@ -1,0 +1,13 @@
+# OS / IDE
+.DS_Store
+Thumbs.db
+.idea/
+*.iml
+.vscode/
+
+# FTC / Gradle project artifacts (only relevant if dropped into a full project)
+local.properties
+build/
+.gradle/
+captures/
+*.apk
