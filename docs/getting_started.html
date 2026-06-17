@@ -104,11 +104,14 @@ public class MyTeleOp extends LinearOpMode {
         recorder.waitForSlotSelection();   // slot-picker UI; before waitForStart()
         waitForStart();
 
-        while (opModeIsActive()) {
-            // ... your normal drive / mechanism code ...
-            recorder.capture();            // every loop (self-limits to 50 Hz)
+        try {
+            while (opModeIsActive()) {
+                // ... your normal drive / mechanism code ...
+                recorder.capture();        // every loop (self-limits to 50 Hz)
+            }
+        } finally {
+            recorder.close();              // saves the recording (finally = saved even on a crash)
         }
-        recorder.close();                  // saves the recording
     }
 }</code></pre>
     <p><span class="out">On the Driver Station:</span> <span class="kbd">D-Pad ▲▼</span> select slot ·

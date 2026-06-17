@@ -51,25 +51,28 @@ public class SampleRecorderTeleOp extends LinearOpMode {
 
         waitForStart();
 
-        while (opModeIsActive()) {
-            // --- Robot-centric mecanum drive on gamepad1 ---
-            double y  = -gamepad1.left_stick_y;  // forward
-            double x  =  gamepad1.left_stick_x;  // strafe
-            double rx =  gamepad1.right_stick_x;  // turn
+        try {
+            while (opModeIsActive()) {
+                // --- Robot-centric mecanum drive on gamepad1 ---
+                double y  = -gamepad1.left_stick_y;  // forward
+                double x  =  gamepad1.left_stick_x;  // strafe
+                double rx =  gamepad1.right_stick_x;  // turn
 
-            double denom = Math.max(Math.abs(y) + Math.abs(x) + Math.abs(rx), 1.0);
-            leftFront.setPower((y + x + rx) / denom);
-            leftBack.setPower((y - x + rx) / denom);
-            rightFront.setPower((y - x - rx) / denom);
-            rightBack.setPower((y + x - rx) / denom);
+                double denom = Math.max(Math.abs(y) + Math.abs(x) + Math.abs(rx), 1.0);
+                leftFront.setPower((y + x + rx) / denom);
+                leftBack.setPower((y - x + rx) / denom);
+                rightFront.setPower((y - x - rx) / denom);
+                rightBack.setPower((y + x - rx) / denom);
 
-            // --- Recorder: line 2 of 3 (safe to call every loop) ---
-            recorder.capture();
-            recorder.showTelemetry();
-            telemetry.update();
+                // --- Recorder: line 2 of 3 (safe to call every loop) ---
+                recorder.capture();
+                recorder.showTelemetry();
+                telemetry.update();
+            }
+        } finally {
+            // --- Recorder: line 3 of 3 — in finally so the recording is saved even if
+            // the loop exits via an exception, not only a normal STOP ---
+            recorder.close();
         }
-
-        // --- Recorder: line 3 of 3 (saves the recording) ---
-        recorder.close();
     }
 }

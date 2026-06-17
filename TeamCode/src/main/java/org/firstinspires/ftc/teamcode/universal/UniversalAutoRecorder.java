@@ -32,13 +32,18 @@ import com.qualcomm.robotcore.hardware.VoltageSensor;
 import org.firstinspires.ftc.robotcore.external.Telemetry;
 
 import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.OutputStreamWriter;
+import java.nio.charset.StandardCharsets;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -52,9 +57,9 @@ import java.util.Map;
  *
  * <p>Faithful by design: each motor is recorded according to its <b>control mode</b> —
  * a closed-loop velocity motor (e.g. a flywheel using {@code RUN_USING_ENCODER} +
- * {@code setVelocity}) is recorded and replayed as a velocity target (RPM), not raw power,
- * so it reproduces accurately regardless of battery voltage. Open-loop power channels are
- * additionally battery-voltage compensated on playback.</p>
+ * {@code setVelocity}) is recorded and replayed as a velocity target in ticks/sec
+ * (proportional to RPM), not raw power, so it holds speed regardless of battery voltage.
+ * Open-loop power channels are additionally battery-voltage compensated on playback.</p>
  *
  * <h3>Integration (import + field + 4 calls in your LinearOpMode):</h3>
  * <pre>{@code
@@ -77,7 +82,8 @@ import java.util.Map;
  *
  * <p>Passing {@code this} (your LinearOpMode) is recommended: it lets the recorder exit
  * cleanly if STOP is pressed during slot selection and accept the Driver Station Play
- * button to begin. The legacy 3-argument constructor still works.</p>
+ * button to begin. The legacy 3-argument constructor still works, but it cannot detect the
+ * Driver Station Play button — on that path you must press gamepad A to start recording.</p>
  *
  * <p>Playback: run the standalone {@link UniversalAutoPlayback} OpMode in autonomous.</p>
  */
@@ -108,6 +114,7 @@ public class UniversalAutoRecorder {
     private final List<PIDFCoefficients> motorPidfs = new ArrayList<>(); // null unless velocity
     private final List<Boolean> motorWasRunToPosition = new ArrayList<>();
     private final List<String> skippedMotorNames = new ArrayList<>(); // dcMotors that aren't DcMotorEx
+    private final List<String> skippedAliasNames = new ArrayList<>(); // extra names pointing at an already-found device
 
     private final List<String> servoNames = new ArrayList<>();
     private final List<Servo> servos = new ArrayList<>();
@@ -147,7 +154,15 @@ public class UniversalAutoRecorder {
         int deviceCount;
     }
 
-    /** Legacy constructor — no OpMode lifecycle awareness. Prefer the 4-arg version. */
+    /**
+     * Legacy constructor — no OpMode lifecycle awareness. On this path the Driver Station
+     * Play button cannot confirm the slot (there is no OpMode to observe), so you MUST press
+     * gamepad A to begin; pressing DS Play just leaves it on the selection screen. STOP still
+     * exits via thread interrupt. Prefer the 4-arg version.
+     *
+     * @deprecated use {@link #UniversalAutoRecorder(HardwareMap, Gamepad, Telemetry, LinearOpMode)}.
+     */
+    @Deprecated
     public UniversalAutoRecorder(HardwareMap hardwareMap, Gamepad gamepad, Telemetry telemetry) {
         this(hardwareMap, gamepad, telemetry, null);
     }
@@ -175,22 +190,44 @@ public class UniversalAutoRecorder {
     // ========================
 
     private void discoverDevices() {
+        // One column per *physical* actuator. If a config binds the same device under
+        // several names (aliases), keep the first and skip the rest — otherwise it would
+        // be recorded and driven twice. Not reachable via the normal Driver Station config
+        // UI (one name per port), but hand-edited config XML can do it.
+        IdentityHashMap<Object, String> seen = new IdentityHashMap<>();
         for (Map.Entry<String, DcMotor> entry : hardwareMap.dcMotor.entrySet()) {
             DcMotor motor = entry.getValue();
             if (!(motor instanceof DcMotorEx)) {
                 skippedMotorNames.add(entry.getKey()); // not DcMotorEx — cannot record (very rare)
                 continue;
             }
+            if (seen.containsKey(motor)) {
+                skippedAliasNames.add(entry.getKey());
+                continue;
+            }
+            seen.put(motor, entry.getKey());
             motorNames.add(entry.getKey());
             motors.add((DcMotorEx) motor);
         }
         for (Map.Entry<String, Servo> entry : hardwareMap.servo.entrySet()) {
+            Servo servo = entry.getValue();
+            if (seen.containsKey(servo)) {
+                skippedAliasNames.add(entry.getKey());
+                continue;
+            }
+            seen.put(servo, entry.getKey());
             servoNames.add(entry.getKey());
-            servos.add(entry.getValue());
+            servos.add(servo);
         }
         for (Map.Entry<String, CRServo> entry : hardwareMap.crservo.entrySet()) {
+            CRServo crServo = entry.getValue();
+            if (seen.containsKey(crServo)) {
+                skippedAliasNames.add(entry.getKey());
+                continue;
+            }
+            seen.put(crServo, entry.getKey());
             crServoNames.add(entry.getKey());
-            crServos.add(entry.getValue());
+            crServos.add(crServo);
         }
         snapshotMotorChannels(); // initial classification for the slot-screen hint
     }
@@ -327,8 +364,15 @@ public class UniversalAutoRecorder {
         try {
             File dir = new File(STORAGE_DIR);
             if (!dir.exists()) dir.mkdirs();
-            try (FileWriter writer = new FileWriter(INDEX_FILE)) {
+            // Write to a temp file then rename, so a crash mid-write can't corrupt index.json.
+            File tmp = new File(INDEX_FILE + ".tmp");
+            try (FileWriter writer = new FileWriter(tmp)) {
                 writer.write(json.toString());
+            }
+            File dest = new File(INDEX_FILE);
+            if (!tmp.renameTo(dest)) {
+                dest.delete();
+                tmp.renameTo(dest);
             }
         } catch (IOException ignored) {
         }
@@ -466,6 +510,12 @@ public class UniversalAutoRecorder {
         return num < 10 ? "0" + num : String.valueOf(num);
     }
 
+    /** A slot is "occupied" iff its CSV exists and is non-empty — the file is the truth. */
+    private boolean slotHasFile(int slot) {
+        File f = new File(STORAGE_DIR + "slot_" + pad(slot) + ".csv");
+        return f.exists() && f.length() > 0;
+    }
+
     private void drawSlotSelectionUI() {
         telemetry.clear();
         telemetry.addLine("╔══════════════════════════════════════╗");
@@ -499,20 +549,28 @@ public class UniversalAutoRecorder {
         if (!skippedMotorNames.isEmpty()) {
             telemetry.addLine("  SKIPPED (not DcMotorEx): " + String.join(", ", skippedMotorNames));
         }
+        if (!skippedAliasNames.isEmpty()) {
+            telemetry.addLine("  SKIPPED (duplicate of another name): " + String.join(", ", skippedAliasNames));
+        }
 
         telemetry.addLine("╠══════════════════════════════════════╣");
         telemetry.addLine("  D-Pad UP/DOWN: Select slot");
         telemetry.addLine("  B:             Delete slot");
-        telemetry.addLine("  A / DS PLAY:   Begin recording");
+        telemetry.addLine(opMode != null
+                ? "  A / DS PLAY:   Begin recording"
+                : "  A:             Begin recording (DS PLAY won't confirm)");
         telemetry.addLine("╠══════════════════════════════════════╣");
 
-        // Slot list
+        // Slot list — the CSV file is the source of truth; index.json metadata is decoration
+        // (so a copied-in recording shows as Available, and a desynced index can't hide a slot).
         for (int i = 1; i <= MAX_SLOTS; i++) {
             SlotInfo s = slots[i];
             String prefix = (i == selectedSlot) ? ">" : " ";
-            if (s.occupied) {
-                telemetry.addData(prefix + " Slot " + i,
-                        s.date + "  " + (s.durationMs / 1000.0) + "s  " + s.frames + "f");
+            if (slotHasFile(i)) {
+                String meta = (s.occupied && s.date != null)
+                        ? s.date + "  " + (s.durationMs / 1000.0) + "s  " + s.frames + "f"
+                        : "Available";
+                telemetry.addData(prefix + " Slot " + i, meta);
             } else {
                 telemetry.addData(prefix + " Slot " + i, "-- EMPTY --");
             }
@@ -521,8 +579,7 @@ public class UniversalAutoRecorder {
         telemetry.addLine("╚══════════════════════════════════════╝");
         telemetry.addLine();
         telemetry.addData("Selected slot", selectedSlot);
-        SlotInfo sel = slots[selectedSlot];
-        if (sel.occupied) {
+        if (slotHasFile(selectedSlot)) {
             telemetry.addLine("WARNING: This slot WILL be overwritten!");
         }
         telemetry.update();
@@ -540,7 +597,7 @@ public class UniversalAutoRecorder {
         telemetry.addData("Voltage comp", voltageCompEnabled ? "ON" : "OFF");
         telemetry.addLine("(Motor modes are sampled when recording starts)");
 
-        if (slots[selectedSlot].occupied) {
+        if (slotHasFile(selectedSlot)) {
             telemetry.addLine();
             telemetry.addLine("Previous recording will be overwritten.");
         }
@@ -662,13 +719,18 @@ public class UniversalAutoRecorder {
             double value = (motorKinds.get(i) == ChannelKind.VELOCITY)
                     ? motors.get(i).getVelocity()   // measured ticks/sec
                     : motors.get(i).getPower();
+            if (!Double.isFinite(value)) value = 0.0; // never write NaN/Inf — it would gap the frame on load
             row.append(",").append(formatDouble(value, 4));
         }
         for (Servo servo : servos) {
-            row.append(",").append(formatDouble(servo.getPosition(), 4));
+            double pos = servo.getPosition();
+            if (!Double.isFinite(pos)) pos = 0.0;
+            row.append(",").append(formatDouble(pos, 4));
         }
         for (CRServo crServo : crServos) {
-            row.append(",").append(formatDouble(crServo.getPower(), 4));
+            double crPower = crServo.getPower();
+            if (!Double.isFinite(crPower)) crPower = 0.0;
+            row.append(",").append(formatDouble(crPower, 4));
         }
 
         recordingRows.add(row.toString());
@@ -717,18 +779,42 @@ public class UniversalAutoRecorder {
         if (!recording) return;
         recording = false;
 
+        File dest = new File(STORAGE_DIR + "slot_" + pad(selectedSlot) + ".csv");
+        File tmp = new File(STORAGE_DIR + "slot_" + pad(selectedSlot) + ".csv.tmp");
         try {
             File dir = new File(STORAGE_DIR);
-            if (!dir.exists()) dir.mkdirs();
+            if (!dir.exists() && !dir.mkdirs()) {
+                throw new IOException("could not create " + STORAGE_DIR);
+            }
 
-            String filePath = STORAGE_DIR + "slot_" + pad(selectedSlot) + ".csv";
-            try (FileWriter writer = new FileWriter(filePath)) {
+            // Write to a temp file and atomically rename, so a STOP/crash mid-save can never
+            // truncate or corrupt the slot — the previous recording stays intact until the new
+            // one is fully on disk. Buffered write + one fsync keeps this well inside the SDK's
+            // post-STOP watchdog window even for long recordings.
+            try (FileOutputStream fos = new FileOutputStream(tmp);
+                 BufferedWriter writer =
+                         new BufferedWriter(new OutputStreamWriter(fos, StandardCharsets.UTF_8), 1 << 16)) {
                 for (String row : recordingRows) {
-                    writer.write(row + "\n");
+                    writer.write(row);
+                    writer.write('\n');
+                }
+                writer.flush();
+                try {
+                    fos.getFD().sync(); // force bytes to flash before the rename commit
+                } catch (IOException ignored) {
+                    // sync unsupported/failed — the rename is still safer than truncating in place
+                }
+            }
+            if (!tmp.renameTo(dest)) {
+                // Some filesystems won't rename onto an existing file — replace it.
+                dest.delete();
+                if (!tmp.renameTo(dest)) {
+                    throw new IOException("commit (rename) failed");
                 }
             }
 
-            // Update index
+            // Commit metadata only AFTER the CSV is durably in place, so index.json can never
+            // claim a slot whose CSV write didn't finish.
             SlotInfo info = slots[selectedSlot];
             info.occupied = true;
             info.date = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.US).format(new Date());
@@ -747,10 +833,10 @@ public class UniversalAutoRecorder {
             telemetry.update();
 
         } catch (IOException e) {
+            if (tmp.exists()) tmp.delete(); // don't leave a half-written temp behind
             telemetry.addLine("ERROR: Failed to save recording");
             telemetry.addData("Message", e.getMessage());
             telemetry.update();
-            sleep(3000);
         }
     }
 

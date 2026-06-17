@@ -28,11 +28,12 @@ before you depend on it for a precision auto.
 ## Features
 
 - **Auto-discovery** — finds all `DcMotorEx` / `Servo` / `CRServo` in your `HardwareMap`. No lists to maintain.
-- **Faithful to control mode** — a closed-loop **velocity** motor (e.g. a flywheel on `RUN_USING_ENCODER` + `setVelocity`) is recorded and replayed *as an RPM target*, not raw power, so it holds speed on playback day.
+- **Faithful to control mode** — a closed-loop **velocity** motor (e.g. a flywheel on `RUN_USING_ENCODER` + `setVelocity`) is recorded and replayed *as a velocity target* (ticks/sec, proportional to RPM), not raw power, so it holds speed on playback day.
 - **Battery-voltage compensation** — open-loop power channels are scaled per-frame so a drained pack doesn't undershoot.
 - **10 recording slots** with an on-Driver-Station selection UI.
 - **Smooth playback** — ~200 Hz linear interpolation between recorded frames (no stair-stepping).
 - **Self-describing, versioned file format** — tolerant of any legal device name (even names with spaces).
+- **Crash-safe save** — recordings are written atomically (temp file + rename), so a STOP or crash mid-save never corrupts the file or destroys your previous recording in that slot.
 - **Safety timeout** — playback auto-stops after the recording ends (or 30 s, whichever is later).
 
 ## How it works
@@ -85,7 +86,10 @@ recorder.capture();
 // Optional live status:
 recorder.showTelemetry();
 
-// After your main loop (reached on STOP):
+// After your main loop — put close() in a finally so the recording is saved even if the
+// loop exits via an exception, not only a normal STOP:
+//   try { while (opModeIsActive()) { ...; recorder.capture(); } }
+//   finally { recorder.close(); }
 recorder.close();
 ```
 

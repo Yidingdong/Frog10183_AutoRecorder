@@ -182,7 +182,7 @@ public class UniversalAutoPlayback extends LinearOpMode {
         for (int i = 1; i <= MAX_SLOTS; i++) {
             String prefix = (i == selectedSlot) ? ">" : " ";
             File f = new File(STORAGE_DIR + "slot_" + pad(i) + ".csv");
-            if (f.exists()) {
+            if (f.exists() && f.length() > 0) {
                 telemetry.addData(prefix + " Slot " + i, "Available (" + f.length() / 1024 + " KB)");
             } else {
                 telemetry.addData(prefix + " Slot " + i, "-- EMPTY --");
@@ -357,8 +357,7 @@ public class UniversalAutoPlayback extends LinearOpMode {
             double[] data = new double[deviceDefs.size()];
             for (int i = 0; i < deviceDefs.size(); i++) {
                 double v = Double.parseDouble(parts[off + i]);
-                if (!Double.isFinite(v)) return; // drop a frame carrying NaN/Infinity
-                data[i] = v;
+                data[i] = Double.isFinite(v) ? v : 0.0; // clamp the offending column, keep the frame
             }
             if (!Double.isFinite(vb)) vb = -1; // bad vbat → no comp for this frame
             frameTimestamps.add(ts);
@@ -414,13 +413,10 @@ public class UniversalAutoPlayback extends LinearOpMode {
             try {
                 long[] ts = new long[]{Long.parseLong(parts[0])};
                 double[] data = new double[deviceDefs.size()];
-                boolean finite = true;
                 for (int i = 0; i < deviceDefs.size(); i++) {
                     double v = Double.parseDouble(parts[i + 1]);
-                    if (!Double.isFinite(v)) { finite = false; break; }
-                    data[i] = v;
+                    data[i] = Double.isFinite(v) ? v : 0.0; // clamp the offending column, keep the frame
                 }
-                if (!finite) continue; // drop a frame carrying NaN/Infinity
                 frameTimestamps.add(ts);
                 frameData.add(data);
             } catch (NumberFormatException ignored) {
