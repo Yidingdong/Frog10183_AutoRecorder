@@ -9,12 +9,16 @@ servo on your robot and records what they do, then plays it back faithfully.
 > Built for FTC SDK **11.0.0**. Pure SDK — no Pedro/Road Runner/dashboard dependency.
 > MIT licensed (see `LICENSE`).
 
+> **See it rendered:** [How it works — animated diagram](https://htmlpreview.github.io/?https://github.com/Yidingdong/Frog10183_AutoRecorder/blob/main/docs/how_it_works.html) · [Getting-started guide](https://htmlpreview.github.io/?https://github.com/Yidingdong/Frog10183_AutoRecorder/blob/main/docs/getting_started.html)
+> &nbsp;&nbsp;*(GitHub shows `.html` as source — these links render the pages.)*
+
 ---
 
 ## Implement it in 5 steps
 
-> Works with **any** robot — any motors, servos, and CR-servos. Only requirement: the recording
-> OpMode must be a **`LinearOpMode`** (an iterative `OpMode` with `init()`/`loop()` won't work).
+> Works with **any** robot — any motors, servos, and CR-servos. Two requirements: you have an
+> existing **FTC SDK 11.0.0 project** (this repo is a library, not a standalone app), and the
+> recording OpMode is a **`LinearOpMode`** (an iterative `OpMode` with `init()`/`loop()` won't work).
 
 1. **Copy two files** into your project under `TeamCode/.../universal/`:
    `UniversalAutoRecorder.java` and `UniversalAutoPlayback.java`.
