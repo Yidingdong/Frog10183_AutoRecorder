@@ -11,6 +11,47 @@ servo on your robot and records what they do, then plays it back faithfully.
 
 ---
 
+## Implement it in 5 steps
+
+> Works with **any** robot — any motors, servos, and CR-servos. Only requirement: the recording
+> OpMode must be a **`LinearOpMode`** (an iterative `OpMode` with `init()`/`loop()` won't work).
+
+1. **Copy two files** into your project under `TeamCode/.../universal/`:
+   `UniversalAutoRecorder.java` and `UniversalAutoPlayback.java`.
+2. **Make a copy of your TeleOp** (e.g. `MyTeleOp` → `MyTeleOpRecord`) and add the recorder to the
+   **copy** — leave your competition TeleOp untouched.
+3. **Add the recorder to that copy** (an import, a field, and 4 calls):
+   ```java
+   import org.firstinspires.ftc.teamcode.universal.UniversalAutoRecorder;
+
+   private UniversalAutoRecorder recorder;                 // field
+
+   @Override public void runOpMode() {
+       // ... your existing hardware init ...
+       recorder = new UniversalAutoRecorder(hardwareMap, gamepad1, telemetry, this);
+       recorder.waitForSlotSelection();                    // slot picker (before waitForStart)
+       waitForStart();
+       try {
+           while (opModeIsActive()) {
+               // ... your existing drive code, unchanged ...
+               recorder.capture();                          // every loop (self-limits to 50 Hz)
+           }
+       } finally {
+           recorder.close();                                // saves the recording
+       }
+   }
+   ```
+4. **Enable playback:** delete the `@Disabled` line in `UniversalAutoPlayback.java`.
+5. **Record** (run your copy → pick a slot → press **A** → drive the autonomous by hand → **STOP**),
+   then **replay** (run **"Universal Auto Playback"** → same slot → **PLAY**).
+
+> ⚠️ **Same start, every time.** There is no localization — playback just repeats your outputs. Place
+> the robot in the **exact same start position and heading**, in the **same robot state** (e.g. arm
+> down, intake empty), on a **comparably charged battery** — for the recording *and* every replay.
+> Any offset or difference at the start carries through the entire run.
+
+---
+
 ## What it is — and what it isn't
 
 It records the **outputs** your robot produced (motor power / velocity, servo positions)
@@ -87,6 +128,9 @@ recorder.showTelemetry();
 //   finally { recorder.close(); }
 recorder.close();
 ```
+
+> **Tip** — Add this to a **copy** of your TeleOp (e.g. `MyTeleOpRecord`), not your competition
+> TeleOp, so recording never interferes with your match code.
 
 > **Note** — You can construct the recorder **anywhere in init**. It re-samples each motor's
 > control mode the moment recording starts (your first `capture()`), so a flywheel only needs

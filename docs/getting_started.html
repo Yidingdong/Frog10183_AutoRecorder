@@ -69,8 +69,9 @@
       iterative <code>OpMode</code> (<code>init()</code>/<code>loop()</code>) isn't supported as-is. Playback is
       already a LinearOpMode.</li>
     <li>A working robot configuration on the Driver Station and a gamepad.</li>
-    <li><b>A consistent start position.</b> Replay has no localization — decide now how you'll place the robot the same
-      way every match (field wall, a start jig, tape marks).</li>
+    <li><b>The same start position, heading, and robot state — every time.</b> Replay has no localization; it just
+      repeats your outputs. Decide now how you'll place the robot identically every run (field wall, start jig, tape
+      marks) and in the same state (arm down, intake empty). Any offset at the start carries through the whole run.</li>
     <li><b>A charged, consistent battery.</b> Speeds depend on voltage; record on a fresh pack.</li>
   </ul>
 
@@ -90,7 +91,8 @@
   <h2>2 · Wire the recorder into a TeleOp</h2>
   <div class="step">
     <h3><span class="num">2</span>Add the recorder <span class="pill">recorder</span></h3>
-    <p><span class="do">What you do:</span> construct the recorder after your hardware/subsystems are set up, call
+    <p><span class="do">What you do:</span> work in a <b>copy</b> of your TeleOp (e.g. <code>MyTeleOpRecord</code>),
+      not your competition one. Construct the recorder after your hardware/subsystems are set up, call
       <code>capture()</code> every loop, and <code>close()</code> on stop.</p>
 <pre><code>import org.firstinspires.ftc.teamcode.universal.UniversalAutoRecorder;
 

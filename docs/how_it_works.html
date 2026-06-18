@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="de">
+<html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Universal Auto Recorder &amp; Playback — Wie es funktioniert</title>
+<title>Universal Auto Recorder &amp; Playback — How it works</title>
 <style>
   :root{
     --bg:#0f1419; --card:#1a212b; --card2:#212a36; --ink:#e6edf3; --muted:#9aa7b4;
@@ -58,27 +58,27 @@
 <body>
 <div class="wrap">
 
-  <h1>Wie der Universal Auto Recorder funktioniert</h1>
-  <p class="sub">Schaubild &amp; Erklärung · FTC SDK 11.0.0 · „Fahr deine Autonomous einmal, spiel sie ab"</p>
+  <h1>How the Universal Auto Recorder works</h1>
+  <p class="sub">Diagram &amp; explanation · FTC SDK 11.0.0 · &ldquo;Drive your autonomous once, replay it&rdquo;</p>
 
   <div class="card">
-    <p style="margin:0 0 8px"><span class="tag">In einem Satz</span></p>
-    <p class="lead" style="margin:0">Das Ding nimmt <b>auf, was deine Motoren und Servos tun</b>, während du den Roboter im
-    TeleOp von Hand fährst — und spielt genau diese Ausgaben in der Autonomous-Phase auf einer Zeitachse wieder ab.
-    Kein Pfad, keine Odometrie, keine Konfiguration: es findet deine Hardware selbst.</p>
+    <p style="margin:0 0 8px"><span class="tag">In one sentence</span></p>
+    <p class="lead" style="margin:0">It records <b>what your motors and servos do</b> while you drive the robot by hand
+    in TeleOp — and replays exactly those outputs on a timeline during Autonomous.
+    No path, no odometry, no configuration: it discovers your hardware itself.</p>
   </div>
 
-  <p>Der Trick ist bewusst simpel. Statt zu berechnen <i>wohin</i> der Roboter fahren soll (wie Road Runner oder
-  Pedro mit Odometrie), merkt sich das System nur, <i>welche Befehle</i> jedes Gerät zu jedem Zeitpunkt bekam.
-  Eine Aufnahme ist im Kern eine Tabelle: eine Zeile alle 20&nbsp;Millisekunden, eine Spalte pro Gerät. Beim Abspielen
-  wird diese Tabelle wieder „abgefahren" und dabei sanft zwischen den Zeilen interpoliert.</p>
+  <p>The trick is deliberately simple. Instead of computing <i>where</i> the robot should go (like Road Runner or
+  Pedro with odometry), the system just remembers <i>which commands</i> each device received at each moment.
+  A recording is essentially a table: one row every 20&nbsp;milliseconds, one column per device. On playback that
+  table is &ldquo;driven&rdquo; again, smoothly interpolating between the rows.</p>
 
-  <h2>Das Schaubild — drei Phasen</h2>
+  <h2>The diagram — three phases</h2>
 
   <div class="figwrap">
     <svg width="100%" viewBox="0 0 940 396" role="img" aria-labelledby="t1 d1" font-family="-apple-system,Segoe UI,Roboto,Arial,sans-serif">
-      <title id="t1">Datenfluss des Universal Auto Recorder</title>
-      <desc id="d1">Phase 1 TeleOp nimmt Motor- und Servo-Ausgaben mit 50 Hz auf, schreibt sie in eine selbstbeschreibende CSV-Datei, die Phase 3 Autonomous mit Interpolation wiedergibt.</desc>
+      <title id="t1">Data flow of the Universal Auto Recorder</title>
+      <desc id="d1">Phase 1 TeleOp records motor and servo outputs at 50 Hz, writes them to a self-describing CSV file, which Phase 3 Autonomous replays with interpolation.</desc>
       <defs>
         <marker id="arr" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
           <path d="M2 1L8 5L2 9" fill="none" stroke="#9aa7b4" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
@@ -90,7 +90,7 @@
         <rect x="12" y="40" width="284" height="300" rx="12" fill="#1a212b" stroke="#2d3744"/>
         <rect x="12" y="40" width="284" height="32" rx="12" fill="#13202b"/>
         <rect x="12" y="58" width="284" height="14" fill="#13202b"/>
-        <text x="28" y="61" fill="#4cc2ff" font-size="13" font-weight="700" letter-spacing=".5">1 · TELEOP — DU FÄHRST</text>
+        <text x="28" y="61" fill="#4cc2ff" font-size="13" font-weight="700" letter-spacing=".5">1 · TELEOP — YOU DRIVE</text>
 
         <!-- gamepad -->
         <rect x="34" y="90" width="74" height="34" rx="17" fill="#212a36" stroke="#2d3744"/>
@@ -104,7 +104,7 @@
         <circle cx="257" cy="86" r="7" fill="#1a212b" stroke="#4cc2ff"/>
         <circle cx="201" cy="144" r="7" fill="#1a212b" stroke="#4cc2ff"/>
         <circle cx="257" cy="144" r="7" fill="#1a212b" stroke="#4cc2ff"/>
-        <text x="229" y="120" text-anchor="middle" fill="#9aa7b4" font-size="11">Roboter</text>
+        <text x="229" y="120" text-anchor="middle" fill="#9aa7b4" font-size="11">Robot</text>
 
         <line x1="110" y1="107" x2="182" y2="107" stroke="#37414f" stroke-width="1.4" marker-end="url(#arr)"/>
 
@@ -117,8 +117,8 @@
         <text x="48" y="230" fill="#cdd9e5" font-size="11.5" font-family="Consolas,monospace">shooter.getVelocity() → 1785</text>
         <text x="48" y="248" fill="#cdd9e5" font-size="11.5" font-family="Consolas,monospace">hood.getPosition()    → 0.50</text>
 
-        <text x="154" y="296" text-anchor="middle" fill="#7ee787" font-size="12.5" font-weight="600">alle 20 ms  ·  50 Hz</text>
-        <text x="154" y="316" text-anchor="middle" fill="#9aa7b4" font-size="11.5">liest die AUSGABEN, nicht die Position</text>
+        <text x="154" y="296" text-anchor="middle" fill="#7ee787" font-size="12.5" font-weight="600">every 20 ms  ·  50 Hz</text>
+        <text x="154" y="316" text-anchor="middle" fill="#9aa7b4" font-size="11.5">reads the OUTPUTS, not position</text>
       </g>
 
       <!-- arrow 1 -->
@@ -149,7 +149,7 @@
           <text x="384" y="280" fill="#cdd9e5" font-size="10.5" font-family="Consolas,monospace">80,12.2,0.62,1785,0.71</text>
         </g>
         <rect class="scan" x="380" y="206" width="180" height="14" fill="#4cc2ff" opacity="0.10"/>
-        <text x="470" y="306" text-anchor="middle" fill="#9aa7b4" font-size="11">selbstbeschreibend · TAB-Header</text>
+        <text x="470" y="306" text-anchor="middle" fill="#9aa7b4" font-size="11">self-describing · TAB header</text>
       </g>
 
       <!-- arrow 2 -->
@@ -162,69 +162,69 @@
         <rect x="644" y="40" width="284" height="300" rx="12" fill="#1a212b" stroke="#2d3744"/>
         <rect x="644" y="40" width="284" height="32" rx="12" fill="#13202b"/>
         <rect x="644" y="58" width="284" height="14" fill="#13202b"/>
-        <text x="660" y="61" fill="#4cc2ff" font-size="13" font-weight="700" letter-spacing=".5">3 · AUTONOMOUS — WIEDERGABE</text>
+        <text x="660" y="61" fill="#4cc2ff" font-size="13" font-weight="700" letter-spacing=".5">3 · AUTONOMOUS — PLAYBACK</text>
 
         <g font-size="12">
           <rect x="664" y="88" width="244" height="36" rx="7" fill="#212a36" stroke="#2d3744"/>
-          <text x="676" y="110" fill="#e6edf3">① Header lesen</text>
-          <text x="896" y="110" text-anchor="end" fill="#9aa7b4" font-size="11">welche Geräte?</text>
+          <text x="676" y="110" fill="#e6edf3">① Read the header</text>
+          <text x="896" y="110" text-anchor="end" fill="#9aa7b4" font-size="11">which devices?</text>
 
           <rect x="664" y="130" width="244" height="36" rx="7" fill="#212a36" stroke="#2d3744"/>
-          <text x="676" y="152" fill="#e6edf3">② Geräte per Name neu bauen</text>
+          <text x="676" y="152" fill="#e6edf3">② Rebuild devices by name</text>
 
           <rect x="664" y="172" width="244" height="36" rx="7" fill="#212a36" stroke="#2d3744"/>
-          <text x="676" y="194" fill="#e6edf3">③ Frames interpolieren</text>
+          <text x="676" y="194" fill="#e6edf3">③ Interpolate frames</text>
           <text x="896" y="194" text-anchor="end" fill="#7ee787" font-size="11">~200 Hz</text>
 
           <rect x="664" y="214" width="244" height="52" rx="7" fill="#212a36" stroke="#2d3744"/>
-          <text x="676" y="234" fill="#e6edf3">④ Hardware ansteuern</text>
+          <text x="676" y="234" fill="#e6edf3">④ Drive the hardware</text>
           <text x="676" y="252" fill="#9aa7b4" font-size="11" font-family="Consolas,monospace">setPower / setVelocity / setPosition</text>
         </g>
         <line x1="786" y1="124" x2="786" y2="130" stroke="#37414f" marker-end="url(#arr)"/>
         <line x1="786" y1="166" x2="786" y2="172" stroke="#37414f" marker-end="url(#arr)"/>
         <line x1="786" y1="208" x2="786" y2="214" stroke="#37414f" marker-end="url(#arr)"/>
-        <text x="786" y="296" text-anchor="middle" fill="#ffb454" font-size="12">Stopp am Ende · Safety-Timeout</text>
-        <text x="786" y="316" text-anchor="middle" fill="#9aa7b4" font-size="11.5">gleiche Startposition nötig</text>
+        <text x="786" y="296" text-anchor="middle" fill="#ffb454" font-size="12">stops at the end · safety timeout</text>
+        <text x="786" y="316" text-anchor="middle" fill="#9aa7b4" font-size="11.5">same start position required</text>
       </g>
 
       <!-- baseline label -->
-      <text x="470" y="372" text-anchor="middle" fill="#9aa7b4" font-size="12.5">Aufnehmen  →  speichern  →  abspielen   ·   keine Motornamen im Code, keine Odometrie</text>
+      <text x="470" y="372" text-anchor="middle" fill="#9aa7b4" font-size="12.5">record  →  save  →  replay   ·   no motor names in code, no odometry</text>
     </svg>
     <div class="legend">
-      <span><span class="dot" style="background:var(--motor)"></span> Motor-Leistung (Power)</span>
-      <span><span class="dot" style="background:var(--vel)"></span> Velocity-Kanal (ticks/s)</span>
-      <span><span class="dot" style="background:var(--servo)"></span> Servo-Position</span>
-      <span><span class="dot" style="background:var(--danger)"></span> Aufnahme aktiv</span>
+      <span><span class="dot" style="background:var(--motor)"></span> Motor power</span>
+      <span><span class="dot" style="background:var(--vel)"></span> Velocity channel (ticks/s)</span>
+      <span><span class="dot" style="background:var(--servo)"></span> Servo position</span>
+      <span><span class="dot" style="background:var(--danger)"></span> Recording active</span>
     </div>
-    <div class="figcap">Eine Zeile pro 20&nbsp;ms; eine Spalte pro Gerät. Die Spaltenzahl passt sich automatisch an deine Hardware an.</div>
+    <div class="figcap">One row per 20&nbsp;ms; one column per device. The number of columns adapts automatically to your hardware.</div>
   </div>
 
   <div class="grid3">
     <div class="stage">
-      <span class="tag">Phase 1 · Aufnahme</span>
-      <p style="margin:0;font-size:14px">Im TeleOp ruft <code>capture()</code> 50-mal pro Sekunde jeden gefundenen Motor/Servo ab und schreibt eine
-      Zeile in einen Puffer. Es liest die <b>Ausgabe</b> (Power, Velocity, Servo-Position) — nicht, wo der Roboter steht.</p>
+      <span class="tag">Phase 1 · Record</span>
+      <p style="margin:0;font-size:14px">In TeleOp, <code>capture()</code> polls every discovered motor/servo 50 times per second and writes a
+      row into a buffer. It reads the <b>output</b> (power, velocity, servo position) — not where the robot is.</p>
     </div>
     <div class="stage">
-      <span class="tag">Phase 2 · Datei</span>
-      <p style="margin:0;font-size:14px">Beim Stop schreibt <code>close()</code> alles nach <code>slot_NN.csv</code>. Der Kopf beschreibt sich selbst:
-      welche Geräte, welcher Typ, welcher Regelmodus. Daher braucht die Wiedergabe <b>keine fest verdrahteten Namen</b>.</p>
+      <span class="tag">Phase 2 · File</span>
+      <p style="margin:0;font-size:14px">On stop, <code>close()</code> writes everything to <code>slot_NN.csv</code>. The header is self-describing:
+      which devices, which type, which control mode. So playback needs <b>no hard-coded names</b>.</p>
     </div>
     <div class="stage">
-      <span class="tag">Phase 3 · Wiedergabe</span>
-      <p style="margin:0;font-size:14px">Die Autonomous-OpMode liest den Kopf, baut genau diese Geräte neu auf, und fährt die Zeitachse ab —
-      mit linearer Interpolation für weiche Bewegung.</p>
+      <span class="tag">Phase 3 · Playback</span>
+      <p style="margin:0;font-size:14px">The Autonomous OpMode reads the header, rebuilds exactly those devices, and drives the timeline —
+      with linear interpolation for smooth motion.</p>
     </div>
   </div>
 
-  <h2>Warum „universell"?</h2>
-  <p>Die meisten Auto-Tools wollen wissen, wie dein Roboter aufgebaut ist: welche Motoren, welche Namen, welches Getriebe.
-  Dieses Tool fragt stattdessen beim Start die <code>HardwareMap</code> ab und nimmt einfach <i>alles</i>, was es findet:</p>
+  <h2>Why &ldquo;universal&rdquo;?</h2>
+  <p>Most auto tools want to know how your robot is built: which motors, which names, which gearing.
+  This tool instead queries the <code>HardwareMap</code> at startup and simply takes <i>everything</i> it finds:</p>
 
   <div class="figwrap">
     <svg width="100%" viewBox="0 0 940 232" role="img" aria-labelledby="t2 d2" font-family="-apple-system,Segoe UI,Roboto,Arial,sans-serif">
-      <title id="t2">Auto-Discovery der HardwareMap</title>
-      <desc id="d2">Die HardwareMap-Geräte werden in DcMotorEx, Servo und CRServo aufgeteilt und auf Datenspalten d0 bis dN abgebildet.</desc>
+      <title id="t2">Auto-discovery of the HardwareMap</title>
+      <desc id="d2">HardwareMap devices are split into DcMotorEx, Servo and CRServo and mapped onto data columns d0 to dN.</desc>
       <defs>
         <marker id="arr2" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
           <path d="M2 1L8 5L2 9" fill="none" stroke="#9aa7b4" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
@@ -232,9 +232,9 @@
       </defs>
       <rect x="20" y="40" width="190" height="150" rx="10" fill="#1a212b" stroke="#2d3744"/>
       <text x="115" y="64" text-anchor="middle" fill="#4cc2ff" font-size="13" font-weight="700">hardwareMap</text>
-      <text x="115" y="84" text-anchor="middle" fill="#9aa7b4" font-size="11">deine aktive Konfiguration</text>
+      <text x="115" y="84" text-anchor="middle" fill="#9aa7b4" font-size="11">your active configuration</text>
       <text x="40" y="112" fill="#cdd9e5" font-size="11.5" font-family="Consolas,monospace">leftFront, rightBack…</text>
-      <text x="40" y="134" fill="#cdd9e5" font-size="11.5" font-family="Consolas,monospace">shooter (Encoder)</text>
+      <text x="40" y="134" fill="#cdd9e5" font-size="11.5" font-family="Consolas,monospace">shooter (encoder)</text>
       <text x="40" y="156" fill="#cdd9e5" font-size="11.5" font-family="Consolas,monospace">hood, claw</text>
       <text x="40" y="178" fill="#cdd9e5" font-size="11.5" font-family="Consolas,monospace">intake (CR)</text>
 
@@ -244,54 +244,54 @@
 
       <rect x="306" y="50" width="220" height="40" rx="8" fill="#13202b" stroke="#4cc2ff"/>
       <text x="320" y="68" fill="#4cc2ff" font-size="12.5" font-weight="600">DcMotorEx</text>
-      <text x="320" y="84" fill="#9aa7b4" font-size="11">Power oder Velocity</text>
+      <text x="320" y="84" fill="#9aa7b4" font-size="11">power or velocity</text>
 
       <rect x="306" y="96" width="220" height="36" rx="8" fill="#13202b" stroke="#7ee787"/>
-      <text x="320" y="118" fill="#7ee787" font-size="12.5" font-weight="600">Servo · Position 0–1</text>
+      <text x="320" y="118" fill="#7ee787" font-size="12.5" font-weight="600">Servo · position 0–1</text>
 
       <rect x="306" y="138" width="220" height="36" rx="8" fill="#13202b" stroke="#d2a8ff"/>
-      <text x="320" y="160" fill="#d2a8ff" font-size="12.5" font-weight="600">CRServo · Power −1…1</text>
+      <text x="320" y="160" fill="#d2a8ff" font-size="12.5" font-weight="600">CRServo · power −1…1</text>
 
       <line x1="530" y1="112" x2="612" y2="112" stroke="#9aa7b4" stroke-width="1.6" marker-end="url(#arr2)"/>
 
       <rect x="618" y="44" width="302" height="148" rx="10" fill="#0c1117" stroke="#2d3744"/>
-      <text x="634" y="68" fill="#e6edf3" font-size="13" font-weight="700">Eine Spalte pro Gerät</text>
+      <text x="634" y="68" fill="#e6edf3" font-size="13" font-weight="700">One column per device</text>
       <text x="634" y="92" fill="#cdd9e5" font-size="11.5" font-family="Consolas,monospace">t_ms · vbat · d0 · d1 · … · dN</text>
-      <text x="634" y="120" fill="#9aa7b4" font-size="12">3 Geräte → 3 Spalten.</text>
-      <text x="634" y="140" fill="#9aa7b4" font-size="12">25 Geräte → 25 Spalten.</text>
-      <text x="634" y="160" fill="#9aa7b4" font-size="12">0 Geräte → Warnung im UI.</text>
-      <text x="634" y="180" fill="#7ee787" font-size="12">Nichts ist fest verdrahtet.</text>
+      <text x="634" y="120" fill="#9aa7b4" font-size="12">3 devices → 3 columns.</text>
+      <text x="634" y="140" fill="#9aa7b4" font-size="12">25 devices → 25 columns.</text>
+      <text x="634" y="160" fill="#9aa7b4" font-size="12">0 devices → warning in the UI.</text>
+      <text x="634" y="180" fill="#7ee787" font-size="12">Nothing is hard-coded.</text>
     </svg>
-    <div class="figcap">Discovery passiert beim Konstruktor; die Spaltenanzahl der Aufnahme ergibt sich rein aus der gefundenen Hardware.</div>
+    <div class="figcap">Discovery happens in the constructor; the recording's column count comes purely from the hardware found.</div>
   </div>
 
-  <h2>Treu nach Regelmodus</h2>
-  <p>Ein roher Power-Wert ist nicht für jedes Gerät die richtige Größe. Deshalb nimmt das System jeden Motor so auf,
-  <i>wie er geregelt wird</i> — und gibt ihn genauso wieder:</p>
+  <h2>Faithful to control mode</h2>
+  <p>A raw power value isn't the right quantity for every device. So the system records each motor the way
+  <i>it is controlled</i> — and plays it back the same way:</p>
   <table>
-    <tr><th>Gerät / Modus</th><th>Aufgenommen wird</th><th>Wiedergabe</th></tr>
-    <tr><td><b>Power-Motor</b> (<code>RUN_WITHOUT_ENCODER</code>)</td><td>der befohlene Power-Wert (−1…1)</td><td><code>setPower()</code>, zusätzlich spannungs-kompensiert</td></tr>
-    <tr><td><b>Velocity-Motor</b> (<code>RUN_USING_ENCODER</code>, z.&nbsp;B. Flywheel)</td><td>die gemessene Drehzahl in ticks/s</td><td><code>setVelocity()</code> mit Original-PIDF → hält die Drehzahl spannungs-unabhängig</td></tr>
-    <tr><td><b>Servo</b></td><td>die Position (0…1)</td><td><code>setPosition()</code></td></tr>
-    <tr><td><b>CR-Servo</b></td><td>der Power-Wert (−1…1)</td><td><code>setPower()</code></td></tr>
+    <tr><th>Device / mode</th><th>What's recorded</th><th>Playback</th></tr>
+    <tr><td><b>Power motor</b> (<code>RUN_WITHOUT_ENCODER</code>)</td><td>the commanded power value (−1…1)</td><td><code>setPower()</code>, plus battery-voltage compensated</td></tr>
+    <tr><td><b>Velocity motor</b> (<code>RUN_USING_ENCODER</code>, e.g. a flywheel)</td><td>the measured speed in ticks/s</td><td><code>setVelocity()</code> with the original PIDF → holds the speed regardless of voltage</td></tr>
+    <tr><td><b>Servo</b></td><td>the position (0…1)</td><td><code>setPosition()</code></td></tr>
+    <tr><td><b>CR servo</b></td><td>the power value (−1…1)</td><td><code>setPower()</code></td></tr>
   </table>
-  <div class="note"><b>Batterie-Kompensation:</b> Open-Loop-Power-Kanäle werden bei der Wiedergabe pro Frame mit
-  <code>aufgenommene&nbsp;Spannung ÷ aktuelle&nbsp;Spannung</code> skaliert. Ein halb leerer Akku am Spieltag unterfährt
-  dadurch nicht. Velocity-Kanäle brauchen das nicht — der geschlossene Regelkreis hält die Drehzahl ohnehin.</div>
+  <div class="note"><b>Battery compensation:</b> open-loop power channels are scaled per frame by
+  <code>recorded&nbsp;voltage ÷ current&nbsp;voltage</code> on playback. A half-empty battery on game day therefore
+  doesn't undershoot. Velocity channels don't need it — the closed loop holds the speed anyway.</div>
 
-  <h2>Glatte Wiedergabe — Interpolation</h2>
-  <p>Aufgenommen wird nur alle 20&nbsp;ms ein Stützpunkt. Würde man diese Stufen direkt ausgeben, ruckelt die Bewegung.
-  Die Wiedergabe läuft daher viel schneller (~200&nbsp;Hz) und rechnet zwischen zwei Stützpunkten linear den Zwischenwert
-  aus — passend zur tatsächlich verstrichenen Zeit, nicht zum Frame-Index:</p>
+  <h2>Smooth playback — interpolation</h2>
+  <p>A sample point is only recorded every 20&nbsp;ms. Outputting those steps directly would make the motion jerky.
+  Playback therefore runs much faster (~200&nbsp;Hz) and computes the in-between value linearly between two sample
+  points — matched to the time actually elapsed, not the frame index:</p>
 
   <div class="figwrap">
     <svg width="100%" viewBox="0 0 940 220" role="img" aria-labelledby="t3 d3" font-family="-apple-system,Segoe UI,Roboto,Arial,sans-serif">
-      <title id="t3">Lineare Interpolation zwischen aufgenommenen Frames</title>
-      <desc id="d3">Aufgenommene Stützpunkte alle 20 Millisekunden werden bei der Wiedergabe durch eine glatte, zeitbasierte Gerade verbunden.</desc>
+      <title id="t3">Linear interpolation between recorded frames</title>
+      <desc id="d3">Sample points recorded every 20 milliseconds are joined on playback by a smooth, time-based line.</desc>
       <line x1="60" y1="170" x2="900" y2="170" stroke="#2d3744"/>
       <line x1="60" y1="30" x2="60" y2="170" stroke="#2d3744"/>
-      <text x="60" y="196" fill="#9aa7b4" font-size="12">Zeit →</text>
-      <text x="22" y="40" fill="#9aa7b4" font-size="12">Wert</text>
+      <text x="60" y="196" fill="#9aa7b4" font-size="12">Time →</text>
+      <text x="22" y="40" fill="#9aa7b4" font-size="12">Value</text>
       <!-- stair step (recorded) -->
       <polyline fill="none" stroke="#5f6e7e" stroke-width="2" stroke-dasharray="5 4"
         points="60,150 180,150 180,120 360,120 360,80 560,80 560,60 760,60 760,95 900,95"/>
@@ -303,28 +303,28 @@
         <circle cx="60" cy="150" r="4.5"/><circle cx="180" cy="120" r="4.5"/><circle cx="360" cy="80" r="4.5"/>
         <circle cx="560" cy="60" r="4.5"/><circle cx="760" cy="95" r="4.5"/><circle cx="900" cy="95" r="4.5"/>
       </g>
-      <text x="640" y="44" fill="#4cc2ff" font-size="12.5">glatt interpoliert (~200 Hz)</text>
-      <text x="120" y="200" fill="#9aa7b4" font-size="12">grün gestrichelt = rohe 50-Hz-Stufen · blau = das, was die Motoren tatsächlich bekommen</text>
+      <text x="640" y="44" fill="#4cc2ff" font-size="12.5">smoothly interpolated (~200 Hz)</text>
+      <text x="120" y="200" fill="#9aa7b4" font-size="12">green dashed = raw 50 Hz steps · blue = what the motors actually receive</text>
     </svg>
   </div>
 
-  <h2>Was es bewusst NICHT kann</h2>
-  <p>Ehrlich bleiben ist Teil des Designs — es ist <b>Output-Replay, kein Navigationsplan</b>:</p>
+  <h2>What it deliberately can't do</h2>
+  <p>Staying honest is part of the design — this is <b>output replay, not a navigation plan</b>:</p>
   <ul>
-    <li><b>Keine Lokalisierung.</b> Es weiß nie, wo der Roboter wirklich steht. Es tut exakt dasselbe wie bei der Aufnahme —
-      egal, ob der Roboter dort steht oder nicht. Darum ist die <b>identische Startposition Pflicht</b>.</li>
-    <li><b>Batteriespannung zählt.</b> Kompensation hilft, kann aber nicht über 100&nbsp;% Sättigung hinaus. Auf frischem Akku aufnehmen.</li>
-    <li><b>Open-Loop-Drift summiert sich.</b> Teppich vs. Fliesen, Radverschleiß — kleine Fehler addieren sich über lange Autos. Kurze Routinen sind zuverlässiger.</li>
-    <li><b><code>RUN_TO_POSITION</code>-Arme</b> erreichen ihre Presets <b>nicht</b> (nur die Geschwindigkeitsgrenze wird erfasst). Solche Mechaniken lieber als Velocity/Power fahren.</li>
-    <li><b>Kein Sensor-Verhalten.</b> Es reagiert nicht auf verpasste Pickups, AprilTags oder Defense.</li>
+    <li><b>No localization.</b> It never knows where the robot really is. It does exactly what it did during the
+      recording — whether or not the robot is in the right place. That's why an <b>identical start position is mandatory</b>.</li>
+    <li><b>Battery voltage matters.</b> Compensation helps, but it can't push past 100&nbsp;% saturation. Record on a fresh battery.</li>
+    <li><b>Open-loop drift accumulates.</b> Carpet vs. tile, wheel wear — small errors add up over long autos. Short routines are more reliable.</li>
+    <li><b><code>RUN_TO_POSITION</code> arms</b> do <b>not</b> reach their presets (only the speed cap is captured). Drive such mechanisms as velocity/power instead.</li>
+    <li><b>No sensor behavior.</b> It doesn't react to missed pickups, AprilTags, or defense.</li>
   </ul>
-  <div class="warn">Faustregel: Nutze Record &amp; Playback, wenn du <b>schnell</b> ein funktionierendes Auto willst, <b>keine Odometrie</b>
-  hast, oder ein Auto mit dem Allianz-Partner <b>teilst</b>. Für zentimetergenaue, lange, sensorabhängige Routinen ist ein
-  Pfad-Follower (Pedro / Road Runner) die bessere Wahl. Beides lässt sich kombinieren — Record &amp; Playback als schneller Start oder Fallback.</div>
+  <div class="warn">Rule of thumb: use Record &amp; Playback when you want a working auto <b>fast</b>, have <b>no odometry</b>,
+  or are <b>sharing</b> an auto with an alliance partner. For centimeter-accurate, long, sensor-dependent routines a
+  path follower (Pedro / Road Runner) is the better choice. The two combine well — Record &amp; Playback as a fast start or fallback.</div>
 
   <footer>
-    Universal Auto Recorder &amp; Playback · MIT · FTC 10183 F.R.O.G. · Volle Referenz in
-    <code>TeamCode/…/universal/readme.md</code> · Einstieg in <code>docs/getting_started.html</code>
+    Universal Auto Recorder &amp; Playback · MIT · FTC 10183 F.R.O.G. · Full reference in
+    <code>TeamCode/…/universal/readme.md</code> · Get started in <code>docs/getting_started.html</code>
   </footer>
 
 </div>
